@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/add_item_screen.dart';
-// import 'screens/create_look_screen.dart';
 import 'screens/create_look_screen.dart';
 
 Future<void> main() async {
@@ -22,9 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HomeShell(),
-      //  AddItemScreen(),
-      // CreateLookScreen(),
+      home: HomeShell()
     );
   }
 }

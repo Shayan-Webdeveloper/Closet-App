@@ -14,7 +14,6 @@ void dispose() {
   _lookNameController.dispose();
   super.dispose();
 }
-  @override
   List<Map<String, dynamic>> _items = [];
   final Set<String> _selectedItemIds = {};
   final TextEditingController _lookNameController = TextEditingController();
@@ -24,15 +23,33 @@ void dispose() {
     _fetchItems();
   }
 
-  Future<void> _fetchItems() async {
-    final data = await Supabase.instance.client
-        .from('items')
-        .select('id, name, category, color, image_path');
+Future<void> _fetchItems() async {
+  final supabase = Supabase.instance.client;
 
-    setState(() {
-      _items = List<Map<String, dynamic>>.from(data);
+  final data = await supabase
+      .from('items')
+      .select('id, name, category, color, image_path');
+
+  final items = <Map<String, dynamic>>[];
+
+  for (final item in data) {
+    final imageUrl = await supabase.storage
+        .from('cutouts')
+        .createSignedUrl(item['image_path'], 3600);
+
+    items.add({
+      ...item,
+      'image_url': imageUrl,
     });
   }
+
+  if (!mounted) return;
+
+  setState(() {
+    _items = items;
+  });
+}
+
   
 Future<void> _saveLook() async {
   final supabase = Supabase.instance.client;
@@ -70,7 +87,7 @@ Future<void> _saveLook() async {
   });
 }
 
-
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create a Look')),
