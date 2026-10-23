@@ -3,7 +3,7 @@
     import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
     import '../services/background_remover.dart';
-
+import 'package:image/image.dart' as img;
     class AddItemScreen extends StatefulWidget {
       const AddItemScreen({super.key});
 
@@ -19,7 +19,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
       final TextEditingController _colorController = TextEditingController();
 
       Uint8List? _imageBytes; // transparent PNG after processing
-      String _modelStatus = 'Loading model...';
+      // String _modelStatus = 'Loading model...';
       bool _isProcessing = false;
 
       @override
@@ -32,6 +32,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
       }
 
       
+Uint8List cropTransparentEdges(Uint8List pngBytes) {
+  final decoded = img.decodeImage(pngBytes);
+
+  if (decoded == null) return pngBytes;
+
+  final cropped = img.trim(
+    decoded,
+    mode: img.TrimMode.transparent,
+  );
+
+  return Uint8List.fromList(img.encodePng(cropped));
+}
+
 Future<void> _saveItem() async {
   if (_isProcessing) return;
 
@@ -125,11 +138,12 @@ Future<void> _saveItem() async {
 
           final stopwatch = Stopwatch()..start();
           final cutout = await _remover.removeBackground(bytes);
+final croppedCutout = cropTransparentEdges(cutout);
           debugPrint('Background removal took ${stopwatch.elapsed.inSeconds}s');
 
           if (!mounted) return;
           setState(() {
-            _imageBytes = cutout;
+            _imageBytes = croppedCutout;
             _isProcessing = false;
           });
         } catch (e) {
