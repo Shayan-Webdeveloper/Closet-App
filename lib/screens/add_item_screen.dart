@@ -1,7 +1,7 @@
     import 'package:flutter/foundation.dart';
     import 'package:flutter/material.dart';
     import 'package:image_picker/image_picker.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
     import '../services/background_remover.dart';
 
     class AddItemScreen extends StatefulWidget {
@@ -31,30 +31,80 @@
         super.dispose();
       }
 
-      void _saveItem() {
-        if (_imageBytes == null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Please select an image')));
-          return;
-        }
-        if (_nameController.text.trim().isEmpty ||
-            _categoryController.text.trim().isEmpty ||
-            _colorController.text.trim().isEmpty) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
-          return;
-        }
-        debugPrint(
-          'Item: ${_nameController.text.trim()}, '
-          '${_categoryController.text.trim()}, ${_colorController.text.trim()}',
+      
+Future<void> _saveItem() async {
+  if (_isProcessing) return;
+
+  if (_imageBytes == null) {
+   ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select an image')),
+    ); 
+    return;
+  }
+
+  final name = _nameController.text.trim();
+  final category = _categoryController.text.trim();
+  final color = _colorController.text.trim();
+
+  if (name.isEmpty || category.isEmpty || color.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please fill all fields')),
+    );
+    return;
+  }
+
+  setState(() => _isProcessing = true);
+
+  try {
+    final supabase = Supabase.instance.client;
+
+    final filePath =
+        '${DateTime.now().millisecondsSinceEpoch}.png';
+
+    await supabase.storage
+        .from('cutouts')
+        .uploadBinary(
+          filePath,
+          _imageBytes!,
+          fileOptions: const FileOptions(
+            contentType: 'image/png',
+            upsert: false,
+          ),
         );
-        debugPrint('PNG bytes: ${_imageBytes?.length}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item validated! Ready for upload.')),
-        );
-      }
+
+    await supabase.from('items').insert({
+      'name': name,
+      'category': category,
+      'color': color,
+      'image_path': filePath,
+    });
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Item saved successfully!')),
+    );
+
+    setState(() {
+      _imageBytes = null;
+      _nameController.clear();
+      _categoryController.clear();
+      _colorController.clear();
+    });
+  } catch (e) {
+    debugPrint('SAVE ITEM ERROR: $e');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to save item: $e')),
+    );
+  } finally {
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
+  }
+}
 
       Future<void> _pickImage(ImageSource source) async {
         try {
