@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/add_item_screen.dart';
 import 'screens/create_look_screen.dart';
-
+import 'screens/my_looks_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -37,16 +37,30 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [const AddItemScreen(), const CreateLookScreen()];
+    final screens = [
+  const AddItemScreen(),
+  const CreateLookScreen(),
+  const MyLooksScreen(),
+];
     return Scaffold(
       body: screens[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.add_a_photo), label: 'Add Item'),
-          NavigationDestination(icon: Icon(Icons.checkroom), label: 'Create Look'),
-        ],
+  NavigationDestination(
+    icon: Icon(Icons.add_a_photo),
+    label: 'Add Item',
+  ),
+  NavigationDestination(
+    icon: Icon(Icons.checkroom),
+    label: 'Create Look',
+  ),
+  NavigationDestination(
+    icon: Icon(Icons.style),
+    label: 'My Looks',
+  ),
+],
       ),
     );
   }
